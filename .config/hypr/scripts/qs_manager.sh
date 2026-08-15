@@ -36,7 +36,7 @@ qs_ensure_cache "wallpaper_picker"
 
 BT_PID_FILE="$QS_RUN_DIR/bt_scan_pid"
 BT_SCAN_LOG="$QS_LOG_DIR/bt_scan.log"
-SRC_DIR="${WALLPAPER_DIR:-${srcdir:-$HOME/Pictures/Wallpapers}}"
+SRC_DIR="${WALLPAPER_DIR:-${srcdir:-/home/yusuf/Resimler/Wallpapers}}"
 THUMB_DIR="$QS_CACHE_WALLPAPER_PICKER/thumbs"
 PREP_LOCK="$QS_RUN_DIR/wallpaper_prep.lock"
 
@@ -97,7 +97,7 @@ handle_wallpaper_prep() {
         [ ! -f "$MANIFEST" ] && build_manifest
 
         SRC_LIST=$(mktemp)
-        find "$SRC_DIR" -maxdepth 1 -type f \
+        find "$SRC_DIR" -maxdepth 2 -type f \
             \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \
                -o -iname "*.gif" -o -iname "*.mp4" -o -iname "*.mkv" \
                -o -iname "*.mov" -o -iname "*.webm" \) \
@@ -166,6 +166,11 @@ if [[ "$ACTION" == "close" ]]; then
 fi
 
 if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
+    if [[ "$TARGET" == "systeminfo" ]]; then
+        quickshell -p "$SHELL_QML_PATH" ipc call main handleCommand "$ACTION" "$TARGET" "$SUBTARGET" >/dev/null 2>&1
+        exit 0
+    fi
+
     if [[ "$TARGET" == "network" ]]; then
         handle_network_prep
         [[ -n "$SUBTARGET" ]] && echo "$SUBTARGET" > "$NETWORK_MODE_FILE"
@@ -178,8 +183,8 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
         CURRENT_SRC=""
         if pgrep -a "mpvpaper" > /dev/null; then
             CURRENT_SRC=$(pgrep -a mpvpaper | grep -o "$SRC_DIR/[^' ]*" | head -n1)
-        elif command -v swww >/dev/null; then
-            CURRENT_SRC=$(swww query 2>/dev/null | grep -o "$SRC_DIR/[^ ]*" | head -n1)
+        elif command -v awww >/dev/null; then
+            CURRENT_SRC=$(awww query 2>/dev/null | grep -o "$SRC_DIR/[^ ]*" | head -n1)
         fi
 
         TARGET_THUMB=""
