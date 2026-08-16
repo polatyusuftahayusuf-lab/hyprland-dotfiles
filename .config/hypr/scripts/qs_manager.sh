@@ -103,7 +103,7 @@ handle_wallpaper_prep() {
                -o -iname "*.mov" -o -iname "*.webm" \) \
             -printf "%f\n" | sort > "$SRC_LIST"
 
-        comm -23 <(sed 's/^000_//' "$MANIFEST" | sort) "$SRC_LIST" | while read -r orphan; do
+        comm -23 <(sed 's/^000_//' "$MANIFEST" | sort) <(sed 's/^000_//' "$SRC_LIST" | sort) | while read -r orphan; do
             rm -f "$THUMB_DIR/$orphan" "$THUMB_DIR/000_$orphan"
             sed -i "/^${orphan}$/d;/^000_${orphan}$/d" "$MANIFEST"
         done
@@ -123,12 +123,15 @@ handle_wallpaper_prep() {
             fi
 
             if [[ "${extension,,}" =~ ^(mp4|mkv|mov|webm)$ ]]; then
-                thumb="$THUMB_DIR/000_$filename"
-                [ -f "$THUMB_DIR/$filename" ] && rm -f "$THUMB_DIR/$filename"
+                # Keep exactly one 000_ marker; the picker uses it to identify videos.
+                video_name="$filename"
+                [[ "$video_name" == 000_* ]] || video_name="000_$video_name"
+                thumb="$THUMB_DIR/$video_name"
+                [ -f "$THUMB_DIR/$filename" ] && [ "$filename" != "$video_name" ] && rm -f "$THUMB_DIR/$filename"
                 if [ ! -f "$thumb" ]; then
                     ffmpeg -y -ss 00:00:05 -i "$img" -vframes 1 \
                         -threads 1 -f image2 -q:v 2 "$thumb" >/dev/null 2>&1
-                    echo "000_$filename" >> "$MANIFEST"
+                    echo "$video_name" >> "$MANIFEST"
                 fi
             else
                 thumb="$THUMB_DIR/$filename"
